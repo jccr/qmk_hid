@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  linux:
+    name: Linux ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+            suffix: ''
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            suffix: _aarch64
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libudev-dev
+
+    - name: Setup Rust toolchain
+      run: rustup show
+
+    - name: Build Linux tool
+      run: cargo build --release --locked
+
+    - name: Check if Linux tool can start
+      run: target/release/qmk_hid --help
+
+    - name: Upload release asset
+      run: |
+        asset="qmk_hid_linux${{ matrix.suffix }}_${TAG}.zip"
+        zip -j "$asset" target/release/qmk_hid
+        gh release upload "$TAG" "$asset" --clobber
