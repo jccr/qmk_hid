@@ -61,6 +61,32 @@ jobs:
         name: qmk_hid_linux
         path: target/release/qmk_hid
 
+  build-aarch64:
+    name: Build Linux aarch64
+    runs-on: ubuntu-24.04-arm
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libudev-dev
+
+    - name: Setup Rust toolchain
+      run: rustup show
+
+    - name: Build Linux tool
+      run: cargo build --release
+
+    - name: Check if Linux tool can start
+      run: cargo run --release -- --help
+
+    - name: Upload Linux Release tool
+      uses: actions/upload-artifact@v4
+      with:
+        name: qmk_hid_linux_aarch64
+        path: target/release/qmk_hid
+
   build-windows:
     name: Build Windows
     runs-on: windows-2022
